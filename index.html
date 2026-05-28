@@ -89,32 +89,37 @@ Sistema de compatibilidad iniciado.
 
 <script>
 
+<script>
+
 const noBtn = document.getElementById("no");
 const yesBtn = document.getElementById("yes");
 
 let yesScale = 1;
 
-// POSICIÓN INICIAL DEL BOTÓN NO
-noBtn.style.left = "55%";
-noBtn.style.top = "52%";
+// POSICIÓN INICIAL
+noBtn.style.position = "fixed";
+noBtn.style.left = "58%";
+noBtn.style.top = "56%";
 
-// MOVER BOTÓN NO
-function moveNoButton() {
+// MOVER BOTÓN
+function moveButton() {
 
-const x = Math.random() * (window.innerWidth - 120);
-const y = Math.random() * (window.innerHeight - 60);
+const x = Math.random() * (window.innerWidth - 140);
+const y = Math.random() * (window.innerHeight - 80);
 
-noBtn.style.left = `${x}px`;
-noBtn.style.top = `${y}px`;
+noBtn.style.left = x + "px";
+noBtn.style.top = y + "px";
 
 }
 
-// CUANDO INTENTEN DARLE AL NO
-function escapeNo() {
+// ESCAPAR
+function escapeButton(e){
 
-moveNoButton();
+e.preventDefault();
 
-// HACER MÁS GRANDE EL SÍ
+moveButton();
+
+// AGRANDAR BOTÓN SÍ
 yesScale += 0.08;
 
 yesBtn.style.transform = `scale(${yesScale})`;
@@ -122,10 +127,10 @@ yesBtn.style.transform = `scale(${yesScale})`;
 }
 
 // PC
-noBtn.addEventListener("mouseenter", escapeNo);
+noBtn.addEventListener("mousemove", escapeButton);
 
 // CELULAR
-noBtn.addEventListener("touchstart", escapeNo);
+noBtn.addEventListener("touchstart", escapeButton);
 
 // BOTÓN SÍ
 yesBtn.addEventListener("click", () => {
@@ -142,7 +147,7 @@ color:white;
 font-family:Arial;
 ">
 
-<h1>Excelente decisión </h1>
+<h1>Excelente decisión 💕</h1>
 
 <img src="foto.jpg" width="250" style="
 border-radius:20px;
