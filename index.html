@@ -114,17 +114,11 @@ escapeLevel++;
 
 
 // EL BOTÓN SÍ CRECE
-yesScale += 0.12;
+yesScale += 0.14;
 
 yesBtn.style.transform = `scale(${yesScale})`;
 
-
-// EL NO SE MUEVE MÁS LENTO
-for(let i = 0; i < escapeLevel; i++){
-
-setTimeout(() => {
 moveNoButton();
-}, i * 250);
 
 }
 
