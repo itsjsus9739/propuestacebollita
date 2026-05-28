@@ -88,6 +88,7 @@ Sistema de compatibilidad iniciado.
 </div>
 
 <script>
+<script>
 
 const noBtn = document.getElementById("no");
 const yesBtn = document.getElementById("yes");
@@ -113,17 +114,17 @@ escapeLevel++;
 
 
 // EL BOTÓN SÍ CRECE
-yesScale += 0.15;
+yesScale += 0.12;
 
 yesBtn.style.transform = `scale(${yesScale})`;
 
 
-// EL NO SE MUEVE MUCHAS MÁS VECES
+// EL NO SE MUEVE MÁS LENTO
 for(let i = 0; i < escapeLevel; i++){
 
 setTimeout(() => {
 moveNoButton();
-}, i * 80);
+}, i * 250);
 
 }
 
@@ -149,7 +150,7 @@ color:white;
 font-family:Arial;
 ">
 
-<h1>Excelente decisión </h1>
+<h1>Excelente decisión 💕</h1>
 
 <img src="foto.jpg" width="250" style="
 border-radius:20px;
