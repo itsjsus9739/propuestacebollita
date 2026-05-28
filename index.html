@@ -42,18 +42,19 @@ button{
     border-radius:12px;
     font-size:18px;
     cursor:pointer;
-    transition:0.3s;
 }
 
 #yes{
     background:#ff4d88;
     color:white;
+    transition:0.3s;
 }
 
 #no{
     background:#444;
     color:white;
     position:absolute;
+    transition:0.1s;
 }
 
 .countdown{
@@ -89,18 +90,53 @@ Sistema de compatibilidad iniciado.
 <script>
 
 const noBtn = document.getElementById("no");
+const yesBtn = document.getElementById("yes");
 
-noBtn.addEventListener("mouseover", () => {
+let yesScale = 1;
+let escapeLevel = 1;
 
-const x = Math.random() * (window.innerWidth - 100);
-const y = Math.random() * (window.innerHeight - 50);
+// FUNCIÓN PARA MOVER EL BOTÓN
+function moveNoButton() {
+
+const x = Math.random() * (window.innerWidth - 120);
+const y = Math.random() * (window.innerHeight - 70);
 
 noBtn.style.left = `${x}px`;
 noBtn.style.top = `${y}px`;
 
-});
+}
+
+// CUANDO INTENTEN TOCAR EL NO
+function escapeNo() {
+
+escapeLevel++;
+
+
+// EL BOTÓN SÍ CRECE
+yesScale += 0.15;
+
+yesBtn.style.transform = `scale(${yesScale})`;
+
+
+// EL NO SE MUEVE MUCHAS MÁS VECES
+for(let i = 0; i < escapeLevel; i++){
+
+setTimeout(() => {
+moveNoButton();
+}, i * 80);
+
+}
+
+}
+
+// PC
+noBtn.addEventListener("mouseover", escapeNo);
+
+// CELULAR
+noBtn.addEventListener("touchstart", escapeNo);
 
 document.getElementById("yes").onclick = () => {
+
 document.body.innerHTML = `
 <div style="
 height:100vh;
@@ -112,11 +148,22 @@ background:#0f0f0f;
 color:white;
 font-family:Arial;
 ">
-<h1> Excelente decisión </h1>
-<img src="foto.jpg" width="250">
-<p>Compatibilidad confirmada exitosamente.</p>
+
+<h1>Excelente decisión </h1>
+
+<img src="foto.jpg" width="250" style="
+border-radius:20px;
+margin-top:20px;
+box-shadow:0 0 25px rgba(255,255,255,0.2);
+">
+
+<p style="margin-top:20px;">
+Compatibilidad confirmada exitosamente.
+</p>
+
 </div>
 `;
+
 };
 
 const targetDate = new Date("June 3, 2026 00:00:00").getTime();
