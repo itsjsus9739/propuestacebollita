@@ -53,8 +53,8 @@ button{
 #no{
     background:#444;
     color:white;
-    position:fixed;
-    transition:0.2s;
+    position:absolute;
+    transition:0.1s;
 }
 
 .countdown{
@@ -89,51 +89,69 @@ Sistema de compatibilidad iniciado.
 
 <script>
 
-<script>
-
 const noBtn = document.getElementById("no");
 const yesBtn = document.getElementById("yes");
 
 let yesScale = 1;
+let escapeLevel = 1;
 
-// POSICIÓN INICIAL
-noBtn.style.position = "fixed";
-noBtn.style.left = "58%";
-noBtn.style.top = "56%";
+// FUNCIÓN PARA MOVER EL BOTÓN
+function moveNoButton() {
 
-// MOVER BOTÓN
-function moveButton() {
+const x = Math.random() * (window.innerWidth - 120);
+const y = Math.random() * (window.innerHeight - 70);
 
-const x = Math.random() * (window.innerWidth - 140);
-const y = Math.random() * (window.innerHeight - 80);
-
-noBtn.style.left = x + "px";
-noBtn.style.top = y + "px";
+noBtn.style.left = `${x}px`;
+noBtn.style.top = `${y}px`;
 
 }
 
-// ESCAPAR
-function escapeButton(e){
+// CUANDO INTENTEN TOCAR EL NO
+function escapeNo() {
 
-e.preventDefault();
+escapeLevel++;
 
-moveButton();
 
-// AGRANDAR BOTÓN SÍ
-yesScale += 0.08;
+// EL BOTÓN SÍ CRECE
+yesScale += 0.15;
 
 yesBtn.style.transform = `scale(${yesScale})`;
+
+
+// EL NO SE MUEVE MUCHAS MÁS VECES
+for(let i = 0; i < escapeLevel; i++){
+
+setTimeout(() => {
+function moveNoButton() {
+
+const buttonWidth = noBtn.offsetWidth;
+const buttonHeight = noBtn.offsetHeight;
+
+// LIMITES PARA QUE NO SE SALGA
+const maxX = window.innerWidth - buttonWidth - 20;
+const maxY = window.innerHeight - buttonHeight - 20;
+
+// POSICIÓN ALEATORIA
+const x = Math.random() * maxX;
+const y = Math.random() * maxY;
+
+noBtn.style.left = `${x}px`;
+noBtn.style.top = `${y}px`;
+
+}
+}, i * 180);
+
+}
 
 }
 
 // PC
-noBtn.addEventListener("mousemove", escapeButton);
+noBtn.addEventListener("mouseover", escapeNo);
 
 // CELULAR
-noBtn.addEventListener("touchstart", escapeButton);
+noBtn.addEventListener("touchstart", escapeNo);
 
-// BOTÓN SÍ
-yesBtn.addEventListener("click", () => {
+document.getElementById("yes").onclick = () => {
 
 document.body.innerHTML = `
 <div style="
@@ -162,12 +180,11 @@ Compatibilidad confirmada exitosamente.
 </div>
 `;
 
-});
+};
 
-// CONTADOR
 const targetDate = new Date("June 3, 2026 00:00:00").getTime();
 
-setInterval(() => {
+const timer = setInterval(() => {
 
 const now = new Date().getTime();
 const distance = targetDate - now;
