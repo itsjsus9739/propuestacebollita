@@ -9,21 +9,27 @@
 
 *{
     box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
 }
 
 body{
-    margin:0;
     height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
     background:#0f0f0f;
     font-family:Arial, sans-serif;
-    overflow:hidden;
     color:white;
+    position:relative;
 }
 
-/* EFECTOS DE FONDO */
 body::before{
     content:"";
     position:absolute;
@@ -51,7 +57,7 @@ body::after{
     background:rgba(255,255,255,0.05);
     padding:45px;
     border-radius:25px;
-    backdrop-filter: blur(10px);
+    backdrop-filter:blur(10px);
     box-shadow:0 0 25px rgba(255,255,255,0.05);
     width:90%;
     max-width:500px;
@@ -66,13 +72,17 @@ p{
     opacity:0.8;
 }
 
+/* El area de botones tiene altura fija para que el No pueda moverse
+   dentro sin deformar el contenedor */
 .buttons{
     margin-top:35px;
     position:relative;
-    height:140px;
+    height:60px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-/* BOTONES */
 button{
     padding:15px 35px;
     border:none;
@@ -82,29 +92,24 @@ button{
     font-weight:bold;
 }
 
-/* BOTÓN SÍ */
 #yes{
     background:#ff4d88;
     color:white;
-    transition:0.25s;
+    transition:transform 0.25s;
     box-shadow:0 0 15px rgba(255,77,136,0.5);
+    position:absolute;
+    left:50%;
+    transform-origin:center center;
 }
 
-/* BOTÓN NO */
+/* El botón No vive dentro de .buttons con position absolute */
 #no{
     background:#444;
     color:white;
     position:absolute;
-    left:58%;
-    top:0;
-    
-    /* MOVIMIENTO MÁS SUAVE */
-    transition:
-    left 0.35s ease,
-    top 0.35s ease;
+    transition:left 0.3s ease, top 0.3s ease;
 }
 
-/* TIMER */
 .countdown{
     margin-top:25px;
     font-size:1.2rem;
@@ -117,6 +122,21 @@ button{
     color:#ff77aa;
 }
 
+/* Flechas PNG alrededor del botón No */
+.arrow-img{
+    position:fixed;
+    pointer-events:none;
+    width:40px;
+    height:40px;
+    z-index:30;
+    animation:pulseArrow 0.6s infinite alternate;
+}
+
+@keyframes pulseArrow{
+    from{ opacity:0.75; transform:scale(1); }
+    to{   opacity:1;    transform:scale(1.18); }
+}
+
 </style>
 </head>
 
@@ -124,170 +144,227 @@ button{
 
 <div class="container">
 
-<h1>¿Quieres ser mi novia?</h1>
+    <h1>¿Quieres ser mi novia?</h1>
 
-<p>
-Sistema de compatibilidad iniciado correctamente.
-</p>
+    <p>Sistema de compatibilidad iniciado correctamente.</p>
 
-<div class="buttons">
+    <!-- Ambos botones viven aquí; No se posiciona con absolute dentro -->
+    <div class="buttons" id="btnArea">
+        <button id="yes">Sí ❤️</button>
+        <button id="no">No ❌</button>
+    </div>
 
-<button id="yes">Sí ❤️</button>
-
-<button id="no">No ❌</button>
-
-</div>
-
-<div class="countdown">
-
-⏳ Tiempo restante:
-
-<div id="timer"></div>
-
-</div>
+    <div class="countdown">
+        ⏳ Tiempo restante:
+        <div id="timer"></div>
+    </div>
 
 </div>
 
 <script>
 
-const noBtn = document.getElementById("no");
-const yesBtn = document.getElementById("yes");
+const noBtn   = document.getElementById("no");
+const yesBtn  = document.getElementById("yes");
+const btnArea = document.getElementById("btnArea");
 
 let yesScale = 1;
+let noCount  = 0;
+let arrows   = [];
 
-/* MOVER BOTÓN NO */
-function moveNoButton(){
+/* ─────────────────────────────────────────────
+   CONFIGURACIÓN DE FLECHAS
+   Cambia estas rutas por los PNG que tengas.
+   Si no tienes archivos, usa URLs de internet.
+───────────────────────────────────────────── */
+const ARROW_SRCS = [
+    "rojoarriba.png",    /* apunta hacia arriba    */
+    "rojoderecha.png",   /* apunta hacia la derecha */
+    "rojoabajo.png",     /* apunta hacia abajo     */
+    "rojoizquierda.png", /* apunta hacia la izquierda */
+];
 
-    const buttonWidth = noBtn.offsetWidth;
-    const buttonHeight = noBtn.offsetHeight;
+/* ─────────────────────────────────────────────
+   POSICIÓN INICIAL
+   El No aparece a la derecha del Sí, dentro
+   del área de botones, en el mismo renglón.
+───────────────────────────────────────────── */
+function initPositions(){
+    const areaW  = btnArea.offsetWidth;
+    const areaH  = btnArea.offsetHeight;
+    const yesW   = yesBtn.offsetWidth;
+    const noW    = noBtn.offsetWidth;
+    const noH    = noBtn.offsetHeight;
+    const gap    = 20;
+    const totalW = yesW + gap + noW;
 
-    /* MÁRGENES DE SEGURIDAD */
-    const margin = 20;
+    /* Centrar el grupo horizontalmente dentro del área */
+    const startX = (areaW - totalW) / 2;
 
-    /* LIMITES PARA QUE NO SALGA */
-    const maxX = window.innerWidth - buttonWidth - margin;
-    const maxY = window.innerHeight - buttonHeight - margin;
+    /* Sí: a la izquierda */
+    yesBtn.style.left = startX + "px";
+    yesBtn.style.transform = "none";
 
-    const minX = margin;
-    const minY = margin;
-
-    const x = Math.random() * (maxX - minX) + minX;
-    const y = Math.random() * (maxY - minY) + minY;
-
-    noBtn.style.left = `${x}px`;
-    noBtn.style.top = `${y}px`;
-
+    /* No: a la derecha del Sí */
+    noBtn.style.left = (startX + yesW + gap) + "px";
+    noBtn.style.top  = ((areaH - noH) / 2) + "px";
 }
 
-/* ESCAPAR */
+/* ─────────────────────────────────────────────
+   ZONA DE MOVIMIENTO DEL NO
+   Se mueve dentro del contenedor (.container)
+   con un pequeño margen exterior.
+───────────────────────────────────────────── */
+function moveNoButton(){
+    const cont  = document.querySelector(".container");
+    const cr    = cont.getBoundingClientRect();
+    const ar    = btnArea.getBoundingClientRect();
+    const bw    = noBtn.offsetWidth;
+    const bh    = noBtn.offsetHeight;
+
+    /* Límites en coordenadas de ventana */
+    const margin = 10;
+    const minX_v = cr.left  + margin;
+    const maxX_v = cr.right  - bw - margin;
+    const minY_v = cr.top   + margin;
+    const maxY_v = cr.bottom - bh - margin;
+
+    /* Convertir a coordenadas relativas al btnArea */
+    const randX_v = Math.random() * (maxX_v - minX_v) + minX_v;
+    const randY_v = Math.random() * (maxY_v - minY_v) + minY_v;
+
+    noBtn.style.left = (randX_v - ar.left) + "px";
+    noBtn.style.top  = (randY_v - ar.top)  + "px";
+}
+
+/* ─────────────────────────────────────────────
+   FLECHAS PNG ALREDEDOR DEL BOTÓN SÍ
+   Se posicionan fuera del borde, fijas,
+   una en cada lado cardinal.
+───────────────────────────────────────────── */
+function getYesPositions(){
+    const r   = yesBtn.getBoundingClientRect();
+    const cx  = r.left + r.width  / 2;
+    const cy  = r.top  + r.height / 2;
+    const off = 34;
+    return [
+        { src: ARROW_SRCS[0], x: cx - 20,             y: r.top    - off - 20 },
+        { src: ARROW_SRCS[1], x: r.right  + off - 20, y: cy - 20             },
+        { src: ARROW_SRCS[2], x: cx - 20,             y: r.bottom + off - 20 },
+        { src: ARROW_SRCS[3], x: r.left   - off - 20, y: cy - 20             },
+    ];
+}
+
+function createArrows(){
+    removeArrows();
+    getYesPositions().forEach(pos => {
+        const img = document.createElement("img");
+        img.src        = pos.src;
+        img.className  = "arrow-img";
+        img.style.left = pos.x + "px";
+        img.style.top  = pos.y + "px";
+        document.body.appendChild(img);
+        arrows.push(img);
+    });
+}
+
+function removeArrows(){
+    arrows.forEach(a => a.remove());
+    arrows = [];
+}
+
+/* Las flechas rodean el Si que no se mueve;
+   updateArrows solo se usa al cambiar tamaño de ventana */
+function updateArrows(){
+    if(arrows.length === 0) return;
+    getYesPositions().forEach((pos, i) => {
+        if(!arrows[i]) return;
+        arrows[i].style.left = pos.x + "px";
+        arrows[i].style.top  = pos.y + "px";
+    });
+}
+
+/* ─────────────────────────────────────────────
+   ESCAPE DEL NO
+───────────────────────────────────────────── */
 function escapeNo(){
-
-    /* CRECER EL SÍ */
+    noCount++;
     yesScale += 0.08;
-
     yesBtn.style.transform = `scale(${yesScale})`;
-
-    /* MOVER SOLO UNA VEZ */
     moveNoButton();
 
+    if(noCount === 10){
+        /* Crear las flechas una sola vez */
+        setTimeout(createArrows, 320);
+    } else if(noCount > 10){
+        /* Solo moverlas siguiendo al botón */
+        setTimeout(updateArrows, 320);
+    }
 }
 
-/* PC */
 noBtn.addEventListener("mouseenter", escapeNo);
-
-/* CELULAR */
 noBtn.addEventListener("touchstart", (e) => {
-
     e.preventDefault();
-
     escapeNo();
-
 });
 
-/* BOTÓN SÍ */
+/* ─────────────────────────────────────────────
+   BOTÓN SÍ
+───────────────────────────────────────────── */
 yesBtn.onclick = () => {
-
-document.body.innerHTML = `
-
-<div style="
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-background:#0f0f0f;
-color:white;
-font-family:Arial;
-text-align:center;
-padding:20px;
-">
-
-<h1 style="
-font-size:3rem;
-margin-bottom:10px;
-">
-Excelente decisión
-</h1>
-
-<p style="
-opacity:0.8;
-margin-bottom:25px;
-">
-Compatibilidad confirmada exitosamente.
-</p>
-
-<img src="foto.jpg" style="
-width:260px;
-border-radius:25px;
-box-shadow:0 0 25px rgba(255,255,255,0.2);
-">
-
-
-</div>
-
-`;
-
+    removeArrows();
+    document.body.innerHTML = `
+    <div style="
+        height:100vh;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        flex-direction:column;
+        background:#0f0f0f;
+        color:white;
+        font-family:Arial;
+        text-align:center;
+        padding:20px;
+    ">
+        <h1 style="font-size:3rem; margin-bottom:10px;">Excelente decisión</h1>
+        <p style="opacity:0.8; margin-bottom:25px;">Compatibilidad confirmada exitosamente.</p>
+        <img src="foto.jpg" style="
+            width:260px;
+            border-radius:25px;
+            box-shadow:0 0 25px rgba(255,255,255,0.2);
+        ">
+    </div>`;
 };
 
-/* CUENTA REGRESIVA */
+/* ─────────────────────────────────────────────
+   CUENTA REGRESIVA
+───────────────────────────────────────────── */
 const targetDate = new Date("June 3, 2026 00:00:00").getTime();
+const timerEl    = document.getElementById("timer");
 
-const timer = setInterval(() => {
-
-    const now = new Date().getTime();
-
+const interval = setInterval(() => {
+    const now      = new Date().getTime();
     const distance = targetDate - now;
 
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-
-    const hours = Math.floor(
-        (distance % (1000 * 60 * 60 * 24)) /
-        (1000 * 60 * 60)
-    );
-
-    const minutes = Math.floor(
-        (distance % (1000 * 60 * 60)) /
-        (1000 * 60)
-    );
-
-    const seconds = Math.floor(
-        (distance % (1000 * 60)) /
-        1000
-    );
-
-    document.getElementById("timer").innerHTML =
-    `${days}d ${hours}h ${minutes}m ${seconds}s`;
-
     if(distance < 0){
-
-        clearInterval(timer);
-
-        document.getElementById("timer").innerHTML =
-        "Tiempo agotado 💔";
-
+        clearInterval(interval);
+        if(timerEl) timerEl.innerHTML = "Tiempo agotado 💔";
+        return;
     }
 
+    const days    = Math.floor(distance / (1000 * 60 * 60 * 24));
+    const hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+    if(timerEl) timerEl.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+
 }, 1000);
+
+/* ─────────────────────────────────────────────
+   INICIO
+───────────────────────────────────────────── */
+window.addEventListener("load", initPositions);
+setTimeout(initPositions, 80);
 
 </script>
 
